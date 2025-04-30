@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>MIB Browser</title>
+</head>
+<body>
+    <h1>MIB Browser</h1>
+    <form method="POST" action="/snmp">
+        <label>Agente (IP):</label>
+        <input type="text" name="agent" required><br>
+
+        <label>Versión SNMP:</label>
+        <select name="version">
+            <option value="v1">v1</option>
+            <option value="v2c">v2c</option>
+        </select><br>
+
+        <label>Community:</label>
+        <input type="text" name="community" required><br>
+
+        <label>OID:</label>
+        <input type="text" name="oid" required><br>
+
+        <label>Operación:</label>
+        <select name="operation">
+            <option value="get">SNMPGET</option>
+            <option value="next">SNMPNEXT</option>
+            <option value="set">SNMPSET</option>
+            <option value="bulk">SNMPBULKWALK</option>
+        </select><br><br>
+
+        <input type="submit" value="Enviar">
+    </form>
+
+    {% if result %}
+        <h2>Resultado:</h2>
+        <p>{{ result }}</p>
+    {% endif %}
+</body>
+</html>
