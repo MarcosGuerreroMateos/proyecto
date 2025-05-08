@@ -2,40 +2,142 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>MIB Browser</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNMP Operations</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+
+        header {
+            background-color: #074ee6;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+        }
+
+        form {
+            background: white;
+            max-width: 500px;
+            margin: 20px auto;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        button {
+            background-color: #074ee6;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #074ee6;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 10px 0;
+            font-size: 12px;
+            color: #888;
+        }
+
+        .result {
+            max-width: 500px;
+            margin: 20px auto;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .result h2 {
+            margin-top: 0;
+        }
+
+        .result p {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
 </head>
 <body>
-    <h1>MIB Browser</h1>
-    <form method="POST" action="/snmp">
-        <label>Agente (IP):</label>
-        <input type="text" name="agent" required><br>
+    <header>
+        <h1>SNMP Operations</h1>
+    </header>
 
-        <label>Versión SNMP:</label>
-        <select name="version">
+    <!-- Formulario para enviar los datos -->
+    <form method="POST">
+        <label for="agent_ip">Agent IP:</label>
+        <input type="text" id="agent_ip" name="agent_ip" placeholder="e.g., 127.0.0.1" required>
+
+        <label for="snmp_version">SNMP Version:</label>
+        <select id="snmp_version" name="snmp_version" required>
             <option value="v1">v1</option>
             <option value="v2c">v2c</option>
-        </select><br>
+        </select>
 
-        <label>Community:</label>
-        <input type="text" name="community" required><br>
+        <label for="community">Community:</label>
+        <input type="text" id="community" name="community" placeholder="e.g., public" required>
 
-        <label>OID:</label>
-        <input type="text" name="oid" required><br>
+        <label for="oid">OID:</label>
+        <select id="oid" name="oid" required>
+            <option value="1.3.6.1.2.1.1.1.0">1.3.6.1.2.1.1.1.0 - System Description</option>
+            <option value="1.3.6.1.2.1.2.2.1.7.0">1.3.6.1.2.1.2.2.1.7.0 - Interface Admin Status</option>
+            <option value="1.3.6.1.2.1.2.2.1.10.0">1.3.6.1.2.1.2.2.1.10.0 - IfInOctets</option>
+            <option value="1.3.6.1.2.1.2.2.1.16.0">1.3.6.1.2.1.2.2.1.16.0 - IfOutOctets</option>
+            <option value="1.3.6.1.2.1.2.2.1.11.0">1.3.6.1.2.1.2.2.1.11.0 - IfOperStatus</option>
+        </select>
 
-        <label>Operación:</label>
-        <select name="operation">
-            <option value="get">SNMPGET</option>
-            <option value="next">SNMPNEXT</option>
-            <option value="set">SNMPSET</option>
-            <option value="bulk">SNMPBULKWALK</option>
-        </select><br><br>
+        <label for="operation">Operation:</label>
+        <select id="operation" name="operation" required>
+            <option value="SNMPGET">SNMPGET</option>
+            <option value="SNMPNEXT">SNMPNEXT</option>
+            <option value="SNMPSET">SNMPSET</option>
+            <option value="SNMPBULKWALK">SNMPBULKWALK</option>
+        </select>
 
-        <input type="submit" value="Enviar">
+        <button type="submit">Enviar</button>
     </form>
 
+    <hr>
+
+    <!-- Si hay un resultado, lo mostramos aquí -->
     {% if result %}
-        <h2>Resultado:</h2>
-        <p>{{ result }}</p>
+        <div class="result">
+            <h2>Resultado:</h2>
+            <p>{{ result }}</p>
+        </div>
     {% endif %}
+
+    <footer>
+        <p>&copy; 2025 SNMP Operations Marcos Guerrero</p>
+    </footer>
 </body>
 </html>
