@@ -1,118 +1,111 @@
 from flask import Flask, render_template, request
-
-from pysnmp import *
+from pysnmp.hlapi import (
+    SnmpEngine, CommunityData, UdpTransportTarget, ContextData,
+    ObjectType, ObjectIdentity, getCmd, nextCmd, bulkCmd, setCmd
+)
 
 app = Flask(__name__)
 
-@app.route('/', methods=["GET", "POST"])
+@app.route('/')
 def index():
-    result = None  # Inicializamos el resultado para evitar errores
+    return render_template('index.html')
 
-    if request.method == "POST":
-        # Recuperamos los datos del formulario
-        agent_ip = request.form['agent_ip']
-        snmp_version = request.form['snmp_version']
-        community = request.form['community']
-        oid = request.form['oid']
-        operation = request.form['operation']
+@app.route('/snmp', methods=['POST'])
+def snmp_operation():
+    try:
+        # Captura de datos desde el formulario
+        operation = request.form.get('operation')
+        agent_ip = request.form.get('agent_ip')
+        community = request.form.get('community')
+        oid = request.form.get('oid')
 
-        # Añadimos ".0" al OID si es necesario (excepto para SNMPBULKWALK)
-        if operation != "SNMPBULKWALK" and not oid.endswith('.0'):
-            oid += '.0'
+        # Agregar '.0' al OID si es necesario
+        if operation in ['SNMPGET', 'SNMPNEXT', 'SNMPSET'] and not oid.endswith('.0'):
+            oid = f"{oid}.0"
 
-        # Definir la versión SNMP
-        snmp_version = 0 if snmp_version == 'v1' else 1  # v1=0, v2c=1
+        # Ejecutar la operación SNMP correspondiente
+        result = None
+        if operation == 'SNMPGET':
+            result = snmp_get(agent_ip, community, oid)
+        elif operation == 'SNMPNEXT':
+            result = snmp_next(agent_ip, community, oid)
+        elif operation == 'SNMPBULKWALK':
+            result = snmp_bulkwalk(agent_ip, community, oid)
+        elif operation == 'SNMPSET':
+            value = request.form.get('value')
+            result = snmp_set(agent_ip, community, oid, value)
 
-        try:
-            # SNMPGET
-            if operation == "SNMPGET":
-                print(f"Realizando SNMPGET al agente {agent_ip}, versión {snmp_version}, comunidad '{community}', OID {oid}")
-                iterator = get_cmd(
-                    SnmpEngine(),
-                    CommunityData(community, mpModel=snmp_version),
-                    UdpTransportTarget((agent_ip, 161), timeout=5, retries=3),
-                    ContextData(),
-                    ObjectType(ObjectIdentity(oid))
-                )
-                errorIndication, errorStatus, errorIndex, varBinds = next(iterator)
+        return render_template('resultat.html', result=result)
 
-                if errorIndication:
-                    print(f"Error de SNMPGET: {errorIndication}")
-                    result = f"Error: {errorIndication}"
-                elif errorStatus:
-                    print(f"Error de estado: {errorStatus.prettyPrint()}")
-                    result = f"Error: {errorStatus.prettyPrint()}"
-                else:
-                    for varBind in varBinds:
-                        print(f"Resultado SNMPGET: {varBind[0]} = {varBind[1]}")
-                        result = f"{varBind[0]} = {varBind[1]}"
+    except Exception as e:
+        return render_template('resultat.html', result=f"Error: {e}")
 
-            # SNMPNEXT
-            elif operation == "SNMPNEXT":
-                iterator = next_cmd(
-                    SnmpEngine(),
-                    CommunityData(community, mpModel=snmp_version),
-                    UdpTransportTarget((agent_ip, 161), timeout=5, retries=3),
-                    ContextData(),
-                    ObjectType(ObjectIdentity(oid))
-                )
-                errorIndication, errorStatus, errorIndex, varBinds = next(iterator)
+# Función para SNMPGET
+def snmp_get(agent_ip, community, oid):
+    for (errorIndication, errorStatus, errorIndex, varBinds) in getCmd(
+        SnmpEngine(),
+        CommunityData(community),
+        UdpTransportTarget((agent_ip, 161)),
+        ContextData(),
+        ObjectType(ObjectIdentity(oid))
+    ):
+        if errorIndication:
+            return f"Error: {errorIndication}"
+        elif errorStatus:
+            return f"Error: {errorStatus.prettyPrint()}"
+        else:
+            return f"{varBinds[0].prettyPrint()}"
 
-                if errorIndication:
-                    result = f"Error: {errorIndication}"
-                elif errorStatus:
-                    result = f"Error: {errorStatus.prettyPrint()}"
-                else:
-                    for varBind in varBinds:
-                        result = f"{varBind[0]} = {varBind[1]}"
+# Función para SNMPNEXT
+def snmp_next(agent_ip, community, oid):
+    for (errorIndication, errorStatus, errorIndex, varBinds) in nextCmd(
+        SnmpEngine(),
+        CommunityData(community),
+        UdpTransportTarget((agent_ip, 161)),
+        ContextData(),
+        ObjectType(ObjectIdentity(oid))
+    ):
+        if errorIndication:
+            return f"Error: {errorIndication}"
+        elif errorStatus:
+            return f"Error: {errorStatus.prettyPrint()}"
+        else:
+            return f"{varBinds[0].prettyPrint()}"
 
-            # SNMPSET
-            elif operation == "SNMPSET":
-                iterator = set_cmd(
-                    SnmpEngine(),
-                    CommunityData(community, mpModel=snmp_version),
-                    UdpTransportTarget((agent_ip, 161), timeout=5, retries=3),
-                    ContextData(),
-                    ObjectType(ObjectIdentity(oid), 42)  # Establecemos un valor ficticio (42) como ejemplo
-                )
-                errorIndication, errorStatus, errorIndex, varBinds = next(iterator)
+# Función para SNMPBULKWALK
+def snmp_bulkwalk(agent_ip, community, oid):
+    results = []
+    for (errorIndication, errorStatus, errorIndex, varBinds) in bulkCmd(
+        SnmpEngine(),
+        CommunityData(community),
+        UdpTransportTarget((agent_ip, 161)),
+        ContextData(),
+        0, 25,  # Non-repeaters, max-repetitions
+        ObjectType(ObjectIdentity(oid))
+    ):
+        if errorIndication:
+            return f"Error: {errorIndication}"
+        elif errorStatus:
+            return f"Error: {errorStatus.prettyPrint()}"
+        else:
+            results.append(f"{varBinds[0].prettyPrint()}")
+    return '\n'.join(results)
 
-                if errorIndication:
-                    result = f"Error: {errorIndication}"
-                elif errorStatus:
-                    result = f"Error: {errorStatus.prettyPrint()}"
-                else:
-                    result = "SNMPSET exitoso"
+# Función para SNMPSET
+def snmp_set(agent_ip, community, oid, value):
+    for (errorIndication, errorStatus, errorIndex, varBinds) in setCmd(
+        SnmpEngine(),
+        CommunityData(community),
+        UdpTransportTarget((agent_ip, 161)),
+        ContextData(),
+        ObjectType(ObjectIdentity(oid), value)
+    ):
+        if errorIndication:
+            return f"Error: {errorIndication}"
+        elif errorStatus:
+            return f"Error: {errorStatus.prettyPrint()}"
+        else:
+            return f"{varBinds[0].prettyPrint()}"
 
-            # SNMPBULKWALK
-            elif operation == "SNMPBULKWALK":
-                iterator = bulk_cmd(
-                    SnmpEngine(),
-                    CommunityData(community, mpModel=snmp_version),
-                    UdpTransportTarget((agent_ip, 161), timeout=5, retries=3),
-                    ContextData(),
-                    0, 25,  # Non-repeaters, Max-repetitions
-                    ObjectType(ObjectIdentity(oid))
-                )
-                result_list = []
-                for errorIndication, errorStatus, errorIndex, varBinds in iterator:
-                    if errorIndication:
-                        result = f"Error: {errorIndication}"
-                        break
-                    elif errorStatus:
-                        result = f"Error: {errorStatus.prettyPrint()}"
-                        break
-                    else:
-                        for varBind in varBinds:
-                            result_list.append(f"{varBind[0]} = {varBind[1]}")
-                if not result:
-                    result = "\n".join(result_list)
-
-        except Exception as e:
-            result = f"Error ejecutando SNMP: {e}"
-
-    return render_template("index.html", result=result)
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(debug=True)

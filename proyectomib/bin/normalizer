@@ -1,4 +1,4 @@
-#!/home/tarda/proyecto/proyectomib/bin/python3
+#!/home/tarda/proyecto/proyectomib/bin/python3.11
 # -*- coding: utf-8 -*-
 import re
 import sys
