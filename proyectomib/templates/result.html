@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <title>Resultado SNMP</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1>Resultado</h1>
+    <ul>
+        <li><span>IP:</span> {{ agent_ip }}</li>
+        <li><span>Versión SNMP:</span> {{ version }}</li>
+        {% if v3 %}
+            <li><span>Usuario:</span> {{ user }}</li>
+            <li><span>AuthKey:</span> {{ authkey }}</li>
+            <li><span>Auth Protocol:</span> {{ auth_protocol }}</li>
+            <li><span>PrivKey:</span> {{ privkey }}</li>
+            <li><span>Priv Protocol:</span> {{ priv_protocol }}</li>
+        {% else %}
+            <li><span>Comunidad: {{ community }}</li>
+        {% endif %}
+        <li><span>OID:</span> {{ oid }}</li>
+        <li><span>Operación:</span> {{ operation }}</li>
+    </ul>
+    <a href="/">Volver al formulario
+    <div>
+        {% for line in result %}
+            <div class="result-item">
+                {% if '=' in line %}
+                    <div class="enunciado">{{ line.split('=')[0].strip() }}</div>
+                    <div class="respuesta">{{ line.split('=')[1].strip() }}</div>
+                {% else %}
+                    <div class="enunciado">Mensaje:</div>
+                    <div class="respuesta">{{ line }}</div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+</body>
+</html>
