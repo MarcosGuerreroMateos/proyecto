@@ -27,6 +27,15 @@ def snmp():
     value = request.form.get("value")
     value_type = request.form.get("value_type")
 
+    print(f"\n-- Nueva operación SNMP --")
+    print(f"Operación: {operation}")
+    print(f"IP agente: {ip}")
+    print(f"Community: {community}")
+    print(f"OID: {oid}")
+
+    if operation == "set":
+        print(f"Valor para setear: {value} (Tipo: {value_type})")
+
     if operation != "bulkwalk" and not oid.endswith(".0"):
         oid += ".0"
 
@@ -73,22 +82,30 @@ def snmp():
                 ObjectType(ObjectIdentity(oid), typed_value)
             )
         else:
-            result.append("Operació no reconeguda.")
+            result.append("Operación no reconocida.")
+            print("Operación no reconocida.")
             return render_template("result.html", result=result)
 
         for response in iterator:
             errorIndication, errorStatus, errorIndex, varBinds = response
             if errorIndication:
                 result.append(f"Error: {errorIndication}")
+                print(f"Error: {errorIndication}")
                 break
             elif errorStatus:
-                result.append(f"Error: {errorStatus.prettyPrint()} at {errorIndex}")
+                err_msg = f"Error: {errorStatus.prettyPrint()} at {errorIndex}"
+                result.append(err_msg)
+                print(err_msg)
                 break
             else:
                 for varBind in varBinds:
-                    result.append(f"{varBind[0]} = {varBind[1]}")
+                    line = f"{varBind[0]} = {varBind[1]}"
+                    result.append(line)
+                    print(line)
     except Exception as e:
-        result.append(f"Excepció: {e}")
+        error_msg = f"Excepción: {e}"
+        result.append(error_msg)
+        print(error_msg)
 
     return render_template("result.html", result=result)
 
