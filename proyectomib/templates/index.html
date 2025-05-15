@@ -1,75 +1,53 @@
 <!DOCTYPE html>
-<html>
+<html lang="ca">
 <head>
     <meta charset="UTF-8">
     <title>MIB Browser</title>
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet"/>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
 </head>
 <body>
-    <h1>MIB Browser - Marcos Guerrero</h1>
-    <form action="{{ url_for('snmp') }}" method="post">
-        <label for="agent_ip">IP:</label>
-        <input type="text" id="agent_ip" name="agent_ip" required><br><br>
-        <label for="version">Version SNMP:</label>
-        <select id="version" name="version" onchange="showFields()">
-            <option value="1">v1</option>
-            <option value="2c" selected>v2c</option>
-            <option value="3">v3</option>
-        </select><br><br>
-        <div id="v3" style="display: none;">
-            <label for="user">Usuario:</label>
-                <input type="text" id="user" name="user"><br><br>
-            <label for="authkey">Authkey:</label>
-                <input type="password" id="authkey" name="authkey"><br><br>
-            <label for="privkey">Privkey:</label>
-                <input type="password" id="privkey" name="privkey"><br><br>
-            <label for="auth_protocol">Auth Protocol:</label>
-            <select id="auth_protocol" name="auth_protocol">
-                <option value="MD5">MD5</option>
-                <option value="SHA">SHA</option>
-                <option value="NONE">NO</option>
-            </select><br><br>
-            <label for="priv_protocol">Priv Protocol:</label>
-            <select id="priv_protocol" name="priv_protocol">
-                <option value="DES">DES</option>
-                <option value="AES">AES</option>
-                <option value="NONE">NO</option>
-            </select>
-        </div>
-        <div id="community" style="display: block;">
-            <label for="community">Comunidad:</label>
-                <input type="password" id="community" name="community">
-        </div><br><br>
-        {% if db_online %}
-            <label for="oid">OID:</label>
-            <select id="oid" name="oid" required>
-                <option value="">-- Selecciona un OID --</option>
-                {% for oid_item in oid_list %}
-                    <option value="{{ oid_item[0] }}">
-                        {{ oid_item[1] }} ({{ oid_item[0] }})
-                    </option>
-                {% endfor %}
-            </select><br><br>
-        {% else %}
-            <label for="oid">Introduce manualmente el OID:</label>
-            <input type="text" name="oid" id="oid" placeholder="ej: 1.3.6.1.2.1.1.1.0" required><br><br>
-        {% endif %}
-        <label for="set_value">Valor a establecer:</label>
-        <input type="text" id="set_value" name="set_value"><br><br>
-        <label for="set_type">Tipo de valor:</label>
-        <select id="set_type" name="set_type">
-            <option value="OctetString">OctetString</option>
-            <option value="Integer">Integer</option>
-        </select><br><br>
-        <label for="operation">Operación:</label>
-        <select id="operation" name="operation">
+    <h1>Navegador MIB - Marcos Guerrero</h1>
+    <form action="/snmp" method="post">
+        <label>IP de l'agent:</label>
+        <input type="text" name="ip" required>
+
+        <label>Community:</label>
+        <input type="text" name="community" value="public" required>
+
+        <label>OID:</label>
+        <select name="oid" required>
+            {% for oid, desc in oid_list %}
+                <option value="{{ oid }}">{{ desc }} ({{ oid }})</option>
+            {% endfor %}
+        </select>
+
+        <label>Operació:</label>
+        <select name="operation" id="operation" required onchange="toggleValueFields()">
             <option value="get">GET</option>
             <option value="next">NEXT</option>
             <option value="set">SET</option>
             <option value="bulkwalk">BULKWALK</option>
-        </select><br><br>
+        </select>
+
+        <div id="set-fields" style="display: none;">
+            <label>Valor:</label>
+            <input type="text" name="value">
+            <label>Tipus:</label>
+            <select name="value_type">
+                <option value="Integer">Integer</option>
+                <option value="OctetString">OctetString</option>
+            </select>
+        </div>
+
         <button type="submit">Enviar</button>
     </form>
+
+    <script>
+        function toggleValueFields() {
+            const op = document.getElementById("operation").value;
+            document.getElementById("set-fields").style.display = (op === "set") ? "block" : "none";
+        }
+    </script>
 </body>
 </html>
