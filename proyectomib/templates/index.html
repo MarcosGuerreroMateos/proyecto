@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="ca">
 <head>
-    <meta charset="UTF-8">
-    <title>MIB Browser</title>
+    <meta charset="UTF-8" />
+    <title>Navegador MIB</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-
 </head>
 <body>
-    <h1>Navegador MIB - Marcos Guerrero</h1>
+    <h1>Navegador MIB</h1>
+
     <form action="/snmp" method="post">
         <label>IP de l'agent:</label>
         <input type="text" name="ip" required>
@@ -23,7 +23,7 @@
         </select>
 
         <label>Operació:</label>
-        <select name="operation" id="operation" required onchange="toggleValueFields()">
+        <select name="operation" id="operation" onchange="toggleValueFields()" required>
             <option value="get">GET</option>
             <option value="next">NEXT</option>
             <option value="set">SET</option>
@@ -33,6 +33,7 @@
         <div id="set-fields" style="display: none;">
             <label>Valor:</label>
             <input type="text" name="value">
+
             <label>Tipus:</label>
             <select name="value_type">
                 <option value="Integer">Integer</option>

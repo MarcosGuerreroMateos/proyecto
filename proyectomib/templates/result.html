@@ -1,17 +1,17 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="ca">
 <head>
     <meta charset="UTF-8" />
-    <title>Resultado SNMP</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <title>Resultat SNMP</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1>Resultado SNMP</h1>
+    <h1>Resultat de l'operació</h1>
     <ul>
         {% for line in result %}
             <li>{{ line }}</li>
         {% endfor %}
     </ul>
-    <a href="{{ url_for('index') }}">Volver al formulario</a>
+    <a href="/">Tornar al formulari</a>
 </body>
 </html>

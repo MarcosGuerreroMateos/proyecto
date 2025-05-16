@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request
+import mysql.connector
 from pysnmp.hlapi import (
     SnmpEngine, CommunityData, UdpTransportTarget, ContextData,
     ObjectType, ObjectIdentity, getCmd, nextCmd, setCmd, bulkCmd
@@ -7,16 +8,23 @@ from pysnmp.proto.rfc1902 import Integer, OctetString
 
 app = Flask(__name__)
 
-OID_LIST = [
-    ("1.3.6.1.2.1.1.1", "sysDescr"),
-    ("1.3.6.1.2.1.1.5", "sysName"),
-    ("1.3.6.1.2.1.1.3", "sysUpTime"),
-    ("1.3.6.1.2.1.2.2.1.2", "ifDescr"),
-]
+def get_db_connection():
+    return mysql.connector.connect(
+        host="192.168.56.101",
+        user="mibuser_mm",
+        password="1234",  
+        database="mib_mg"
+    )
 
 @app.route("/", methods=["GET"])
 def index():
-    return render_template("index.html", oid_list=OID_LIST)
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT oid, traduccio_oid FROM oids")
+    oid_list = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template("index.html", oid_list=oid_list)
 
 @app.route("/snmp", methods=["POST"])
 def snmp():
@@ -27,14 +35,12 @@ def snmp():
     value = request.form.get("value")
     value_type = request.form.get("value_type")
 
-    print(f"\n-- Nueva operación SNMP --")
-    print(f"Operación: {operation}")
-    print(f"IP agente: {ip}")
-    print(f"Community: {community}")
-    print(f"OID: {oid}")
+    print(f"\n--- Operació SNMP ---")
+    print(f"Operació: {operation}")
+    print(f"IP: {ip} | Community: {community} | OID: {oid}")
 
     if operation == "set":
-        print(f"Valor para setear: {value} (Tipo: {value_type})")
+        print(f"Valor a setear: {value} ({value_type})")
 
     if operation != "bulkwalk" and not oid.endswith(".0"):
         oid += ".0"
@@ -82,30 +88,24 @@ def snmp():
                 ObjectType(ObjectIdentity(oid), typed_value)
             )
         else:
-            result.append("Operación no reconocida.")
-            print("Operación no reconocida.")
+            result.append("Operació no reconeguda.")
             return render_template("result.html", result=result)
 
         for response in iterator:
             errorIndication, errorStatus, errorIndex, varBinds = response
             if errorIndication:
                 result.append(f"Error: {errorIndication}")
-                print(f"Error: {errorIndication}")
                 break
             elif errorStatus:
-                err_msg = f"Error: {errorStatus.prettyPrint()} at {errorIndex}"
-                result.append(err_msg)
-                print(err_msg)
+                result.append(f"Error: {errorStatus.prettyPrint()} at {errorIndex}")
                 break
             else:
                 for varBind in varBinds:
-                    line = f"{varBind[0]} = {varBind[1]}"
-                    result.append(line)
-                    print(line)
+                    result.append(f"{varBind[0]} = {varBind[1]}")
+                    print(f"{varBind[0]} = {varBind[1]}")
     except Exception as e:
-        error_msg = f"Excepción: {e}"
-        result.append(error_msg)
-        print(error_msg)
+        result.append(f"Excepció: {e}")
+        print(f"Excepció: {e}")
 
     return render_template("result.html", result=result)
 
