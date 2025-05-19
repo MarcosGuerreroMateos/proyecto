@@ -16,6 +16,17 @@ def get_db_connection():
         database="mib_mg"
     )
 
+@app.route("/traps")
+def show_traps():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT trap_id, oid, value, date_time, transport FROM notifications ORDER BY date_time DESC")
+    traps = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template("traps.html", traps=traps)
+
+
 @app.route("/", methods=["GET"])
 def index():
     conn = get_db_connection()

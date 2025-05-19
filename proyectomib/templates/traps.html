@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <title>Traps SNMP</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Traps SNMP rebuts</h1>
+
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Data i hora</th>
+            <th>Transport</th>
+            <th>OID</th>
+            <th>Valor</th>
+        </tr>
+        {% for trap in traps %}
+        <tr>
+            <td>{{ trap[0] }}</td>
+            <td>{{ trap[3] }}</td>
+            <td>{{ trap[4] }}</td>
+            <td>{{ trap[1] }}</td>
+            <td>{{ trap[2] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <br>
+    <a href="/">Tornar al formulari</a>
+</body>
+</html>

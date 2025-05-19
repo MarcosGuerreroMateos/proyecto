@@ -2,11 +2,11 @@
 <html lang="ca">
 <head>
     <meta charset="UTF-8" />
-    <title>Navegador MIB</title>
+    <title>Navegador MIB - Marcos Guerrero</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1>Navegador MIB</h1>
+    <h1>MIB Browser - Marcos G.</h1>
 
     <form action="/snmp" method="post">
         <label>IP de l'agent:</label>
@@ -42,6 +42,9 @@
         </div>
 
         <button type="submit">Enviar</button>
+     
+    <a href="{{ url_for('show_traps') }}">Historial de Traps</a>
+
     </form>
 
     <script>
