@@ -1,12 +1,10 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, flash
 import mysql.connector
-from pysnmp.hlapi import (
-    SnmpEngine, CommunityData, UdpTransportTarget, ContextData,
-    ObjectType, ObjectIdentity, getCmd, nextCmd, setCmd, bulkCmd
-)
-from pysnmp.proto.rfc1902 import Integer, OctetString
+import threading
+import socket
 
 app = Flask(__name__)
+app.secret_key = '1234'  # Cambia esto por una clave secreta real
 
 def get_db_connection():
     return mysql.connector.connect(
@@ -16,6 +14,37 @@ def get_db_connection():
         database="mib_mg"
     )
 
+def insert_trap(oid, value, transport):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO notifications (oid, value, date_time, transport)
+        VALUES (%s, %s, NOW(), %s)
+    """, (oid, value, transport))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+def udp_trap_receiver():
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind(("0.0.0.0", 9162))  # PUERTO ALTO
+    print("UDP Trap receiver listening on UDP/9162...")
+    while True:
+        data, addr = sock.recvfrom(4096)
+        # Intenta decodificar como texto, si no, como hex
+        try:
+            value = data.decode('utf-8')
+            print(f"[Trap recibido] Desde {addr} | Mensaje: {value}")
+        except Exception:
+            value = data.hex()
+            print(f"[Trap recibido] Desde {addr} | Bytes hex: {value}")
+        insert_trap(str(addr), value, "UDP/9162")
+
+# Solo lanza el hilo si este es el proceso principal (evita doble lanzamiento con el reloader de Flask)
+import os
+if os.environ.get("WERKZEUG_RUN_MAIN") == "true" or not app.debug:
+    threading.Thread(target=udp_trap_receiver, daemon=True).start()
+
 @app.route("/traps")
 def show_traps():
     conn = get_db_connection()
@@ -24,8 +53,11 @@ def show_traps():
     traps = cursor.fetchall()
     cursor.close()
     conn.close()
-    return render_template("traps.html", traps=traps)
 
+    if len(traps) > 1:
+        flash("¡Nuevo trap recibido!")
+
+    return render_template("traps.html", traps=traps)
 
 @app.route("/", methods=["GET"])
 def index():
@@ -39,19 +71,18 @@ def index():
 
 @app.route("/snmp", methods=["POST"])
 def snmp():
+    from pysnmp.hlapi import (
+        SnmpEngine, CommunityData, UdpTransportTarget, ContextData,
+        ObjectType, ObjectIdentity, getCmd, nextCmd, setCmd, bulkCmd
+    )
+    from pysnmp.proto.rfc1902 import Integer, OctetString
+
     ip = request.form["ip"]
     community = request.form["community"]
     oid = request.form["oid"]
     operation = request.form["operation"]
     value = request.form.get("value")
     value_type = request.form.get("value_type")
-
-    print(f"\n--- Operació SNMP ---")
-    print(f"Operació: {operation}")
-    print(f"IP: {ip} | Community: {community} | OID: {oid}")
-
-    if operation == "set":
-        print(f"Valor a setear: {value} ({value_type})")
 
     if operation != "bulkwalk" and not oid.endswith(".0"):
         oid += ".0"
@@ -113,12 +144,10 @@ def snmp():
             else:
                 for varBind in varBinds:
                     result.append(f"{varBind[0]} = {varBind[1]}")
-                    print(f"{varBind[0]} = {varBind[1]}")
     except Exception as e:
         result.append(f"Excepció: {e}")
-        print(f"Excepció: {e}")
 
     return render_template("result.html", result=result)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", debug=True, use_reloader=False)

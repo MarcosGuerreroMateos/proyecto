@@ -1,33 +1,41 @@
 <!DOCTYPE html>
-<html lang="ca">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Traps SNMP</title>
+    <title>Traps SNMP Historial</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1>Traps SNMP rebuts</h1>
-
-    <table>
-        <tr>
-            <th>ID</th>
-            <th>Data i hora</th>
-            <th>Transport</th>
-            <th>OID</th>
-            <th>Valor</th>
-        </tr>
-        {% for trap in traps %}
-        <tr>
-            <td>{{ trap[0] }}</td>
-            <td>{{ trap[3] }}</td>
-            <td>{{ trap[4] }}</td>
-            <td>{{ trap[1] }}</td>
-            <td>{{ trap[2] }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-
-    <br>
-    <a href="/">Tornar al formulari</a>
+    <div class="traps-container">
+        <h1>Traps SNMP Historial</h1>
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <div class="alert">
+                {% for message in messages %}
+                    <div>{{ message }}</div>
+                {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Fecha y hora</th>
+                <th>Transporte</th>
+                <th>Origen/OID</th>
+                <th>Mensaje/Valor</th>
+            </tr>
+            {% for trap in traps %}
+            <tr>
+                <td>{{ trap[0] }}</td>
+                <td>{{ trap[3] if trap[3] else '---' }}</td>
+                <td>{{ trap[4] }}</td>
+                <td>{{ trap[1] }}</td>
+                <td><pre>{{ trap[2] }}</pre></td>
+            </tr>
+            {% endfor %}
+        </table>
+        <a href="/">Tornar al formulari</a>
+    </div>
 </body>
 </html>
